@@ -1,0 +1,252 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>智绘计算器</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: #1e272e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+      min-height: 100vh;
+      padding: 20px 0;
+    }
+
+    .calculator {
+      background: #2f3640;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+      width: 350px;
+      max-width: 95vw;
+      margin: 0 auto 30px auto;
+    }
+
+    .display {
+      background: #000;
+      color: #0f0;
+      font-size: 1.8em;
+      text-align: right;
+      padding: 15px;
+      border-radius: 10px;
+      word-wrap: break-word;
+      min-height: 60px;
+      margin-bottom: 5px;
+      user-select: none;
+    }
+
+    .expression-preview {
+      font-size: 0.9em;
+      color: #aaa;
+      text-align: right;
+      margin-bottom: 15px;
+      user-select: none;
+      word-wrap: break-word;
+      min-height: 20px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      justify-content: center;
+    }
+
+    button {
+      font-size: 1.1em;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      background: #718093;
+      color: white;
+      transition: background 0.2s;
+      user-select: none;
+    }
+
+    button.operator { background: #f39c12; }
+    button.function { background: #9b59b6; }
+    button.equal { background: #00cec9; grid-column: span 2; }
+    button.clear { background: #e74c3c; }
+    button:hover { opacity: 0.85; }
+
+    #graph {
+      display: block;
+      margin: 15px auto 0;
+      background: #000;
+      border-radius: 10px;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+
+    #graph-status {
+      font-size: 0.9em;
+      margin-top: 8px;
+      min-height: 18px;
+      text-align: center;
+      color: #ff7675;
+      user-select: none;
+    }
+
+    .graph-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 5px;
+      width: 100%;
+    }
+
+    .draw-button {
+      background: #2ecc71 !important;
+      color: white;
+      padding: 12px 15px;
+      border-radius: 10px;
+      font-size: 1em;
+      flex: 1;
+    }
+
+    .toggle-mode {
+      background: #0984e3 !important;
+    }
+
+    .range-inputs {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: #eee;
+      margin-top: 10px;
+    }
+
+    .range-inputs label {
+      width: 100%;
+      margin-top: 5px;
+      text-align: center;
+    }
+
+    .range-inputs input {
+      width: 45%;
+      padding: 6px;
+      border-radius: 6px;
+      border: none;
+      text-align: center;
+      font-size: 1em;
+    }
+
+    .mode-hint {
+      text-align: center;
+      font-size: 0.85em;
+      color: #00cec9;
+      margin-bottom: 5px;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+<div class="calculator">
+    <div class="display" id="display">0</div>
+    <div class="expression-preview" id="expr-preview">表达式: </div>
+    <div class="buttons">
+
+      <button onclick="clearDisplay()" class="clear">C</button>
+      <button onclick="deleteLast()">DEL</button>
+      <button onclick="appendDisplay('(', '(')">(</button>
+      <button onclick="appendDisplay(')', ')')">)</button>
+      <button class="operator" onclick="appendDisplay('÷', '/')">÷</button>
+
+      <button onclick="appendDisplay('7', '7')">7</button>
+      <button onclick="appendDisplay('8', '8')">8</button>
+      <button onclick="appendDisplay('9', '9')">9</button>
+      <button class="operator" onclick="appendDisplay('×', '*')">×</button>
+      <button class="function" onclick="appendDisplay('√(', 'Math.sqrt(')">√</button>
+
+      <button onclick="appendDisplay('4', '4')">4</button>
+      <button onclick="appendDisplay('5', '5')">5</button>
+      <button onclick="appendDisplay('6', '6')">6</button>
+      <button class="operator" onclick="appendDisplay('−', '-')">−</button>
+      <button class="function" onclick="appendDisplay('^', '^')">^</button>
+
+      <button onclick="appendDisplay('1', '1')">1</button>
+      <button onclick="appendDisplay('2', '2')">2</button>
+      <button onclick="appendDisplay('3', '3')">3</button>
+      <button class="operator" onclick="appendDisplay('+', '+')">+</button>
+      <button class="function" onclick="appendDisplay('|', '|')">|</button>
+
+      <button onclick="appendDisplay('0', '0')">0</button>
+      <button onclick="appendDisplay('.', '.')">.</button>
+      <button class="equal" onclick="onEqual()">=</button>
+      <button class="function" onclick="appendDisplay('sin(', 'trigFunc(Math.sin,')">sin</button>
+
+      <button class="function" onclick="appendDisplay('cos(', 'trigFunc(Math.cos,')">cos</button>
+      <button class="function" onclick="appendDisplay('tan(', 'trigFunc(Math.tan,')">tan</button>
+      <button class="function" onclick="appendDisplay('sec(', 'invTrigFunc(Math.cos,')">sec</button>
+      <button class="function" onclick="appendDisplay('csc(', 'invTrigFunc(Math.sin,')">csc</button>
+      <button class="function" onclick="appendDisplay('cot(', 'invTrigFunc(Math.tan,')">cot</button>
+      
+      <button class="function" onclick="appendDisplay('e', 'Math.E')">e</button>
+      <button class="function" onclick="appendDisplay('π', 'Math.PI')">π</button>
+      <button class="function" onclick="appendDisplay('𝑥', 'x')">𝑥</button>
+      <button class="function" onclick="appendDisplay('𝑦', 'y')">𝑦</button>
+      <button class="function" onclick="appendDisplay(':=', ':=')">:=</button>
+
+      <button class="function" onclick="appendDisplay('log(', 'Math.log(')">log</button>
+      <button class="function" onclick="appendDisplay('exp(', 'Math.exp(')">exp</button>
+      <button class="function" onclick="appendDisplay('asin(', 'degTrig(Math.asin,')">asin</button>
+      <button class="function" onclick="appendDisplay('acos(', 'degTrig(Math.acos,')">acos</button>
+      <button class="function" onclick="appendDisplay('atan(', 'degTrig(Math.atan,')">atan</button>
+
+      <button class="function" onclick="appendDisplay('X!(', 'factorial(')">X!</button>
+      <button class="function" onclick="appendDisplay('floor(', 'Math.floor(')">floor</button>
+      <button class="function" onclick="appendDisplay('ceil(', 'Math.ceil(')">ceil</button>
+      <button class="function" onclick="appendDisplay('round(', 'Math.round(')">round</button>
+      <button onclick="clearDisplay()" class="clear">AC</button>
+    </div>
+  </div>
+<!-- 📊 图像区域 -->
+  <div id="graph-container">
+    <div class="mode-hint">当前为 <span id="mode-text">角度模式</span>，点击按钮切换</div>
+    <div class="graph-buttons">
+      <button class="draw-button" onclick="drawFromY()">绘图</button>
+      <button class="draw-button toggle-mode" id="toggle-deg" onclick="toggleDeg()">角度模式</button>
+      <button class="draw-button" onclick="downloadGraph()">保存图像</button>
+    </div>
+
+    <div class="range-inputs">
+      <label>x范围:</label>
+      <input id="xMin" type="number" value="-10" />
+      <input id="xMax" type="number" value="10" />
+      <label>y范围 (可选):</label>
+      <input id="yMin" type="text" placeholder="自动" />
+      <input id="yMax" type="text" placeholder="自动" />
+    </div>
+
+    <!-- 📌 查询功能 -->
+    <div style="margin-top: 10px; text-align: center;">
+      <input id="queryX" type="number" step="any" placeholder="输入 x 查询 y" style="width: 60%; padding: 8px; border-radius: 6px; font-size: 1em; text-align: center;" />
+      <button onclick="queryY()" style="margin-left: 10px; padding: 8px 12px; font-size: 0.9em; border-radius: 6px; background: #00b894; color: white;">查 y</button>
+    </div>
+
+    <div id="graph-status">提示：请输入表达式并点击“绘图”或 := 绘图符号</div>
+    <canvas id="graph" width="500" height="500"></canvas>
+  </div>
+<script>
+
+function _0x1ec9(_0x408828,_0x23b412){const _0x3ff69a=_0x3ff6();return _0x1ec9=function(_0x1ec905,_0x2e5b5e){_0x1ec905=_0x1ec905-0x12d;let _0x3bf96e=_0x3ff69a[_0x1ec905];return _0x3bf96e;},_0x1ec9(_0x408828,_0x23b412);}const _0x3a6b8c=_0x1ec9;(function(_0x30c097,_0x356792){const _0x10f50c=_0x1ec9,_0x3223ca=_0x30c097();while(!![]){try{const _0x42de5b=-parseInt(_0x10f50c(0x13a))/0x1*(parseInt(_0x10f50c(0x13b))/0x2)+parseInt(_0x10f50c(0x136))/0x3*(parseInt(_0x10f50c(0x14c))/0x4)+-parseInt(_0x10f50c(0x131))/0x5+-parseInt(_0x10f50c(0x12f))/0x6+parseInt(_0x10f50c(0x153))/0x7*(-parseInt(_0x10f50c(0x14f))/0x8)+-parseInt(_0x10f50c(0x13f))/0x9+-parseInt(_0x10f50c(0x14b))/0xa*(-parseInt(_0x10f50c(0x130))/0xb);if(_0x42de5b===_0x356792)break;else _0x3223ca['push'](_0x3223ca['shift']());}catch(_0x41ffad){_0x3223ca['push'](_0x3223ca['shift']());}}}(_0x3ff6,0xee56e));const display=document['getElementById'](_0x3a6b8c(0x13c)),exprPreview=document[_0x3a6b8c(0x149)](_0x3a6b8c(0x135)),modeText=document['getElementById'](_0x3a6b8c(0x14e)),toggleBtn=document['getElementById'](_0x3a6b8c(0x154));let userStack=[],exprStack=[],useDegrees=!![],powerHintShown=![];const needsMultBeforeRegex=/[0-9𝑥xy𝑦πe)]/,funcLikeTokens=['(','Math.sqrt(',_0x3a6b8c(0x12d),_0x3a6b8c(0x142),'Math.floor(',_0x3a6b8c(0x143),_0x3a6b8c(0x144),'trigFunc(Math.sin,','trigFunc(Math.cos,',_0x3a6b8c(0x13e),'factorial(',_0x3a6b8c(0x151),'degTrig(Math.acos,',_0x3a6b8c(0x132),_0x3a6b8c(0x156),_0x3a6b8c(0x139),'invTrigFunc(Math.tan,','Math.E',_0x3a6b8c(0x137),'x','y'],nonMultTokens=['+','-','×','÷','.','^','|','=',':=',''];function toggleDeg(){const _0x2a603b=_0x3a6b8c;useDegrees=!useDegrees;const _0x1d291a=useDegrees?'角度':'弧度';toggleBtn[_0x2a603b(0x150)]=_0x1d291a+'模式',modeText[_0x2a603b(0x150)]=_0x1d291a+'模式',toggleBtn['style']['background']=useDegrees?'#0984e3':'#6c5ce7';}function appendDisplay(_0xc262d9,_0x4d653c){const _0x46f5da=_0x3a6b8c;if(_0xc262d9===':='&&exprStack[_0x46f5da(0x140)](':=')){drawFromY();return;}const _0x3f3578=userStack[_0x46f5da(0x155)]?userStack[userStack[_0x46f5da(0x155)]-0x1]:'',_0x5a57a8=needsMultBeforeRegex[_0x46f5da(0x14d)](_0x3f3578),_0x258105=funcLikeTokens[_0x46f5da(0x140)](_0x4d653c)||/^[0-9]$/[_0x46f5da(0x14d)](_0xc262d9),_0xbcb332=_0x3f3578[_0x46f5da(0x141)]('('),_0x1ecd59=!_0xbcb332&&!nonMultTokens[_0x46f5da(0x140)](_0xc262d9)&&_0x3f3578!==':='&&_0x4d653c!==':=',_0x4d2c41=/^\d$/[_0x46f5da(0x14d)](_0x3f3578),_0x571dfd=/^\d$/[_0x46f5da(0x14d)](_0xc262d9),_0x16be0f=_0x4d2c41&&_0x571dfd;_0x5a57a8&&_0x258105&&_0x1ecd59&&!_0x16be0f&&(userStack['push']('×'),exprStack['push']('*'));userStack['push'](_0xc262d9),exprStack[_0x46f5da(0x134)](_0x4d653c),display[_0x46f5da(0x150)]=userStack['join']('')||'0',exprPreview[_0x46f5da(0x150)]=_0x46f5da(0x133)+exprStack[_0x46f5da(0x146)]('');if(_0xc262d9==='^'&&!powerHintShown)exprPreview['innerText']+=_0x46f5da(0x13d),powerHintShown=!![];else _0xc262d9!=='^'&&(powerHintShown=![]);}function deleteLast(){const _0x1fb37d=_0x3a6b8c;userStack[_0x1fb37d(0x14a)](),exprStack[_0x1fb37d(0x14a)](),display['innerText']=userStack[_0x1fb37d(0x146)]('')||'0',exprPreview[_0x1fb37d(0x150)]=_0x1fb37d(0x133)+exprStack[_0x1fb37d(0x146)]('');}function clearDisplay(){const _0x5ad3a0=_0x3a6b8c;userStack=[],exprStack=[],powerHintShown=![],display[_0x5ad3a0(0x150)]='0',exprPreview[_0x5ad3a0(0x150)]=_0x5ad3a0(0x133),clearGraph(),setGraphStatus('提示：请输入表达式再点击\x20:=\x20绘图');}function setGraphStatus(_0x5b6284){const _0x4e9029=_0x3a6b8c;document[_0x4e9029(0x149)](_0x4e9029(0x138))[_0x4e9029(0x150)]=_0x5b6284;}function isParenthesesBalanced(_0x44881c){let _0x4f04ee=0x0;for(let _0x534a30 of _0x44881c){if(_0x534a30==='(')_0x4f04ee++;else{if(_0x534a30===')')_0x4f04ee--;}if(_0x4f04ee<0x0)return![];}return _0x4f04ee===0x0;}function onEqual(){const _0x5c8d92=_0x3a6b8c,_0xc21dca=exprStack['join']('');exprPreview[_0x5c8d92(0x150)]='表达式:\x20'+_0xc21dca;if(!isParenthesesBalanced(_0xc21dca)){display['innerText']=_0x5c8d92(0x148),setGraphStatus(_0x5c8d92(0x145));return;}if((_0xc21dca[_0x5c8d92(0x140)]('x')||_0xc21dca[_0x5c8d92(0x140)]('y'))&&!_0xc21dca[_0x5c8d92(0x140)](':=')){display[_0x5c8d92(0x150)]='请使用\x20:=\x20绘图',setGraphStatus('提示：含有变量请用\x20:=\x20画图');return;}if(_0xc21dca[_0x5c8d92(0x140)](':=')){drawFromY();return;}try{const _0x1aef23=eval(parsePowerOperators(_0xc21dca));display['innerText']=isFinite(_0x1aef23)?_0x1aef23:'错误';}catch(_0x21713a){display[_0x5c8d92(0x150)]='错误',setGraphStatus(_0x5c8d92(0x147)+_0x21713a[_0x5c8d92(0x152)]);}}function updatePreview(){const _0x3df8f7=_0x3a6b8c;exprPreview['innerText']=_0x3df8f7(0x133)+exprStack[_0x3df8f7(0x146)]('');}window[_0x3a6b8c(0x12e)]=function(){updatePreview();};function _0x3ff6(){const _0x1a46f7=['push','expr-preview','33822eLUOpa','Math.PI','graph-status','invTrigFunc(Math.sin,','202gEUbGh','5806hjoRCC','display','\x20👉\x20幂运算规则(如2^3^2=2^(3^2))','trigFunc(Math.tan,','10979451OPpKOO','includes','endsWith','Math.exp(','Math.ceil(','Math.round(','错误：括号不匹配！','join','计算错误：','括号错误','getElementById','pop','20zjANkU','296QCWHhL','test','mode-text','3199352XPGGvH','innerText','degTrig(Math.asin,','message','21oCZbwN','toggle-deg','length','invTrigFunc(Math.cos,','Math.log10(','onload','4001202pJocUh','31700460CBBAcc','9743945HuCZXU','degTrig(Math.atan,','表达式:\x20'];_0x3ff6=function(){return _0x1a46f7;};return _0x3ff6();}
+
+</script>
+<script>
+
+function _0x351a(_0x1f38cc,_0x398b41){const _0x4773c1=_0x4773();return _0x351a=function(_0x351a87,_0x2c511c){_0x351a87=_0x351a87-0x1c1;let _0x423818=_0x4773c1[_0x351a87];return _0x423818;},_0x351a(_0x1f38cc,_0x398b41);}(function(_0x5ed45d,_0x29a6c0){const _0x33808c=_0x351a,_0x1ddb8e=_0x5ed45d();while(!![]){try{const _0x3a3d4b=parseInt(_0x33808c(0x1d1))/0x1+-parseInt(_0x33808c(0x1c1))/0x2+-parseInt(_0x33808c(0x1e9))/0x3+-parseInt(_0x33808c(0x1df))/0x4+parseInt(_0x33808c(0x1de))/0x5+parseInt(_0x33808c(0x1c3))/0x6*(-parseInt(_0x33808c(0x1f1))/0x7)+parseInt(_0x33808c(0x1cd))/0x8;if(_0x3a3d4b===_0x29a6c0)break;else _0x1ddb8e['push'](_0x1ddb8e['shift']());}catch(_0x20a40d){_0x1ddb8e['push'](_0x1ddb8e['shift']());}}}(_0x4773,0xb2f70));function drawFromY(){const _0x57e370=_0x351a,_0xcc9f96=exprStack['join']('');exprPreview[_0x57e370(0x1f9)]='表达式:\x20'+_0xcc9f96;if((_0xcc9f96[_0x57e370(0x1cb)](/:=/g)||[])['length']!==0x1){setGraphStatus(_0x57e370(0x1ef)),display[_0x57e370(0x1f9)]=_0x57e370(0x1f5);return;}if(!_0xcc9f96[_0x57e370(0x1c5)](':=')){setGraphStatus(_0x57e370(0x1d8));return;}if(!_0xcc9f96[_0x57e370(0x1c5)](':=')){setGraphStatus(_0x57e370(0x1d8));return;}if(!isParenthesesBalanced(_0xcc9f96)){setGraphStatus('错误：括号不匹配！'),display[_0x57e370(0x1f9)]=_0x57e370(0x1d9);return;}const [_0x41f3f0,_0x3c23f8]=_0xcc9f96[_0x57e370(0x1f3)](':='),_0x58d1cd=userStack['join']('');drawFunction(_0x3c23f8[_0x57e370(0x1dc)](),_0x41f3f0[_0x57e370(0x1dc)](),_0x58d1cd);}function drawFunction(_0x526f1e,_0x485365,_0x468340=''){const _0x52451a=_0x351a;_0x526f1e=parsePowerOperators(_0x526f1e);const _0x4f821c=document[_0x52451a(0x1e4)](_0x52451a(0x1fd)),_0x52471e=_0x4f821c[_0x52451a(0x1f8)]('2d');_0x4f821c[_0x52451a(0x1c4)]=_0x4f821c['clientWidth'],_0x4f821c[_0x52451a(0x1e6)]=_0x4f821c[_0x52451a(0x1d2)],clearGraph();const _0x4b3d27=parseFloat(document['getElementById'](_0x52451a(0x1ea))[_0x52451a(0x1f0)])||-0xa,_0xe8ce4f=parseFloat(document[_0x52451a(0x1e4)]('xMax')['value'])||0xa,_0x184a11=parseFloat(document['getElementById'](_0x52451a(0x1e0))[_0x52451a(0x1f0)]),_0x9b75a3=parseFloat(document[_0x52451a(0x1e4)](_0x52451a(0x1f6))[_0x52451a(0x1f0)]);if(_0x4b3d27>=_0xe8ce4f){setGraphStatus(_0x52451a(0x1e5));return;}let _0x1db73a;try{_0x1db73a=Function('x','\x0a\x20\x20\x22use\x20strict\x22;\x0a\x20\x20const\x20useDegrees\x20=\x20'+!useDegrees+';\x0a\x20\x20let\x20trigFunc\x20=\x20'+trigFunc[_0x52451a(0x200)]()+_0x52451a(0x1ff)+degTrig[_0x52451a(0x200)]()+_0x52451a(0x1c9)+_0x526f1e+_0x52451a(0x1fc));}catch(_0x46b79a){setGraphStatus(_0x52451a(0x1d6)+_0x46b79a[_0x52451a(0x1d4)]);return;}const _0xe60581=_0x4f821c[_0x52451a(0x1c4)],_0x28e528=_0x4f821c[_0x52451a(0x1e6)],_0x2b390c=0x28,_0x48a285=_0xe60581*0x2;let _0x1c1674=[],_0x182693=0x0;for(let _0x52cf23=0x0;_0x52cf23<=_0x48a285;_0x52cf23++){const _0x4df8b6=_0x4b3d27+_0x52cf23/_0x48a285*(_0xe8ce4f-_0x4b3d27);let _0x16384d;try{_0x16384d=_0x1db73a(_0x4df8b6),typeof _0x16384d===_0x52451a(0x1d3)&&isFinite(_0x16384d)?(_0x1c1674[_0x52451a(0x1e1)]({'x':_0x4df8b6,'y':_0x16384d}),_0x182693++):_0x1c1674[_0x52451a(0x1e1)](null);}catch{_0x1c1674[_0x52451a(0x1e1)](null);}}if(_0x182693<0x3){setGraphStatus(_0x52451a(0x1d0));return;}let _0x30e8da=isFinite(_0x184a11)?_0x184a11:Math[_0x52451a(0x1ce)](..._0x1c1674[_0x52451a(0x1cf)](_0x2f7400=>_0x2f7400)[_0x52451a(0x1ee)](_0x525f5e=>_0x525f5e['y'])),_0x438479=isFinite(_0x9b75a3)?_0x9b75a3:Math[_0x52451a(0x1da)](..._0x1c1674[_0x52451a(0x1cf)](_0x5eba34=>_0x5eba34)[_0x52451a(0x1ee)](_0x24a13e=>_0x24a13e['y']));if(!isFinite(_0x30e8da)||!isFinite(_0x438479)){setGraphStatus('函数值超限，建议调整\x20y\x20范围');return;}if(_0x438479-_0x30e8da===0x0){const _0x460021=_0x30e8da;_0x30e8da=_0x460021-0x1,_0x438479=_0x460021+0x1,setGraphStatus('提示：函数为常值\x20y='+_0x460021['toFixed'](0x4)+_0x52451a(0x1e3));}else setGraphStatus(_0x52451a(0x1ca)+(_0x468340||_0x485365||_0x526f1e));const _0x34ed8d=(_0xe60581-0x2*_0x2b390c)/(_0xe8ce4f-_0x4b3d27),_0x47525b=(_0x28e528-0x2*_0x2b390c)/(_0x438479-_0x30e8da),_0x381489=_0x2b390c+-_0x4b3d27*_0x34ed8d,_0x397301=_0x2b390c+(_0x438479-0x0)*_0x47525b;_0x52471e[_0x52451a(0x1c7)]='#888',_0x52471e['lineWidth']=0x1,_0x52471e[_0x52451a(0x1d7)]();_0x30e8da<=0x0&&_0x438479>=0x0&&(_0x52471e['moveTo'](_0x2b390c,_0x397301),_0x52471e[_0x52451a(0x1fa)](_0xe60581-_0x2b390c,_0x397301));_0x4b3d27<=0x0&&_0xe8ce4f>=0x0&&(_0x52471e[_0x52451a(0x1ed)](_0x381489,_0x2b390c),_0x52471e[_0x52451a(0x1fa)](_0x381489,_0x28e528-_0x2b390c));_0x52471e[_0x52451a(0x1e7)](),_0x52471e[_0x52451a(0x1eb)]=_0x52451a(0x1fb),_0x52471e[_0x52451a(0x1d5)]=_0x52451a(0x1dd);const _0x443a4a=(_0xe8ce4f-_0x4b3d27)/0xa,_0x4028cc=(_0x438479-_0x30e8da)/0xa;for(let _0x26bae5=0x0;_0x26bae5<=0xa;_0x26bae5++){const _0x347439=_0x4b3d27+_0x26bae5*_0x443a4a,_0x4909d9=_0x2b390c+(_0x347439-_0x4b3d27)*_0x34ed8d;_0x52471e[_0x52451a(0x1c2)](_0x347439[_0x52451a(0x1e8)](0x1),_0x4909d9-0xa,_0x397301+0xf);}for(let _0x3212d9=0x0;_0x3212d9<=0xa;_0x3212d9++){const _0x2babc8=_0x438479-_0x3212d9*_0x4028cc,_0x24afc1=_0x2b390c+(_0x438479-_0x2babc8)*_0x47525b;_0x52471e[_0x52451a(0x1c2)](_0x2babc8[_0x52451a(0x1e8)](0x1),_0x381489+0x5,_0x24afc1+0x4);}_0x52471e[_0x52451a(0x1c7)]='#00f2ff',_0x52471e[_0x52451a(0x1cc)]=0x0,_0x52471e[_0x52451a(0x1ec)]=0x2,_0x52471e[_0x52451a(0x1d7)]();let _0x5b0988=![];for(let _0x198d69=0x0;_0x198d69<_0x1c1674['length'];_0x198d69++){const _0x22daa1=_0x1c1674[_0x198d69];if(!_0x22daa1){_0x5b0988=![];continue;}const _0x1ad433=_0x2b390c+(_0x22daa1['x']-_0x4b3d27)*_0x34ed8d,_0x331a67=_0x2b390c+(_0x438479-_0x22daa1['y'])*_0x47525b;!_0x5b0988?(_0x52471e[_0x52451a(0x1ed)](_0x1ad433,_0x331a67),_0x5b0988=!![]):_0x52471e['lineTo'](_0x1ad433,_0x331a67);}_0x52471e['stroke'](),_0x4f821c[_0x52451a(0x1f7)]=_0x177411=>{const _0xf250e9=_0x52451a,_0x404a20=_0x4f821c[_0xf250e9(0x1c6)](),_0xc6a70b=_0x177411['clientX']-_0x404a20[_0xf250e9(0x1c8)],_0x12d778=_0x4b3d27+(_0xc6a70b-_0x2b390c)/_0x34ed8d;let _0x4ca8cd=NaN;try{_0x4ca8cd=_0x1db73a(_0x12d778);}catch{}isFinite(_0x4ca8cd)?setGraphStatus(_0xf250e9(0x1e2)+_0x12d778[_0xf250e9(0x1e8)](0x3)+_0xf250e9(0x1f2)+_0x4ca8cd[_0xf250e9(0x1e8)](0x3)):setGraphStatus(_0xf250e9(0x1e2)+_0x12d778[_0xf250e9(0x1e8)](0x3)+_0xf250e9(0x1fe));},_0x4f821c[_0x52451a(0x1f4)]=()=>{const _0x4d8569=_0x52451a;setGraphStatus(_0x4d8569(0x1ca)+(_0x468340||_0x485365||_0x526f1e));};}function _0x4773(){const _0x461922=['innerText','lineTo','#ccc',');\x0a','graph',',\x20y\x20=\x20无定义',';\x0a\x20\x20let\x20degTrig\x20=\x20','toString','623384Ubkaui','fillText','12rtpTHJ','width','includes','getBoundingClientRect','strokeStyle','left',';\x0a\x20\x20return\x20(','绘制完成:\x20','match','shadowBlur','13533000yOhiGL','min','filter','有效点太少，函数可能无定义或爆炸','1187211MIqRxj','clientWidth','number','message','font','表达式语法错误：','beginPath','错误：请使用\x20:=\x20作为绘图符号','括号错误','max','clearRect','trim','12px\x20monospace','344240stNeRM','451452bmrpsV','yMin','push','x\x20=\x20','，自动扩展\x20y\x20范围为\x20±1','getElementById','错误：x\x20最小值必须小于最大值！','height','stroke','toFixed','1929195SZABer','xMin','fillStyle','lineWidth','moveTo','map','错误：表达式中\x20:=\x20必须且只能出现一次','value','4014584wqBtxj',',\x20y\x20=\x20','split','onmouseleave','表达式错误','yMax','onmousemove','getContext'];_0x4773=function(){return _0x461922;};return _0x4773();}function clearGraph(){const _0x40cb77=_0x351a,_0x243a82=document[_0x40cb77(0x1e4)](_0x40cb77(0x1fd)),_0x48003c=_0x243a82[_0x40cb77(0x1f8)]('2d');_0x48003c[_0x40cb77(0x1db)](0x0,0x0,_0x243a82['width'],_0x243a82[_0x40cb77(0x1e6)]);}
+
+</script>
+<script>
+
+(function(_0x156328,_0x19edd2){const _0x22bbbc=_0x2a77,_0x1d45c2=_0x156328();while(!![]){try{const _0x485cbf=parseInt(_0x22bbbc(0x1d2))/0x1+-parseInt(_0x22bbbc(0x1d8))/0x2+parseInt(_0x22bbbc(0x1d1))/0x3+parseInt(_0x22bbbc(0x1e1))/0x4+-parseInt(_0x22bbbc(0x1f1))/0x5+-parseInt(_0x22bbbc(0x1ed))/0x6+parseInt(_0x22bbbc(0x1e0))/0x7*(-parseInt(_0x22bbbc(0x1db))/0x8);if(_0x485cbf===_0x19edd2)break;else _0x1d45c2['push'](_0x1d45c2['shift']());}catch(_0x986373){_0x1d45c2['push'](_0x1d45c2['shift']());}}}(_0x16fc,0x8eb25));function parsePowerOperators(_0x521834){const _0x34e3b6=_0x2a77;while(_0x521834['includes']('|')){_0x521834=_0x521834[_0x34e3b6(0x1d3)](/\|([^|]+)\|/g,'Math.abs($1)');if(!/\|[^|]+\|/['test'](_0x521834))break;}return _0x521834=_0x521834[_0x34e3b6(0x1d3)](/π/g,_0x34e3b6(0x1ec)),_0x521834=_0x521834[_0x34e3b6(0x1d3)](/(?<![\w.])e(?![a-zA-Z])/g,'Math.E'),_0x521834=_0x521834[_0x34e3b6(0x1d3)](/(\d)([a-zA-Z(])/g,_0x34e3b6(0x1f5)),_0x521834=_0x521834[_0x34e3b6(0x1d3)](/([)\d])(?=[(a-zA-Z])/g,'$1*'),_0x521834=_0x521834[_0x34e3b6(0x1d3)](/\^/g,'**'),_0x521834;}function queryY(){const _0xc846d7=_0x2a77,_0x40fdf9=parseFloat(document[_0xc846d7(0x1dc)](_0xc846d7(0x1f4))[_0xc846d7(0x1d5)]),_0x4cfcac=exprStack['join']('');if(!_0x4cfcac[_0xc846d7(0x1f2)](':=')){setGraphStatus('错误：必须使用\x20:=\x20绘图符号！');return;}const [_0x3500a4,_0x1b5b42]=_0x4cfcac['split'](':='),_0x3ca39a=parsePowerOperators(_0x1b5b42[_0xc846d7(0x1df)]());try{const _0x3d63bb=Function('x','\x0a\x20\x20\x22use\x20strict\x22;\x0a\x20\x20const\x20useDegrees\x20=\x20'+!useDegrees+_0xc846d7(0x1da)+trigFunc['toString']()+_0xc846d7(0x1e2)+degTrig[_0xc846d7(0x1d7)]()+_0xc846d7(0x1e9)+factorial[_0xc846d7(0x1d7)]()+_0xc846d7(0x1de)+_0x3ca39a+_0xc846d7(0x1d4)),_0x5b52d8=_0x3d63bb(_0x40fdf9);isFinite(_0x5b52d8)?setGraphStatus(_0xc846d7(0x1e4)+_0x40fdf9+_0xc846d7(0x1d6)+_0x5b52d8[_0xc846d7(0x1eb)](0x6)):setGraphStatus(_0xc846d7(0x1d9)+_0x40fdf9+_0xc846d7(0x1e6));}catch(_0xec9fc1){setGraphStatus('查询失败：'+_0xec9fc1[_0xc846d7(0x1e5)]);}}function _0x16fc(){const _0x1a1e84=[';\x0a\x20\x20return\x20(','trim','2001643huyvPl','4027656qNaGCO',';\x0a\x20\x20let\x20degTrig\x20=\x20','阶乘仅支持非负整数','查询结果：x\x20=\x20','message',',\x20y\x20无定义','write','_blank',';\x0a\x20\x20let\x20factorial\x20=\x20','image/png','toFixed','Math.PI','2774070KvqkCj','graph','abs','\x0a\x20\x20\x20\x20\x20\x20<html><head><title>保存图像</title></head>\x0a\x20\x20\x20\x20\x20\x20<body\x20style=\x22margin:0;background:#000;display:flex;align-items:center;justify-content:center;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22','3021965lZBBAG','includes','open','queryX','$1*$2','2312349HmNTXG','872264XxaXqS','replace',');\x0a','value',',\x20y\x20=\x20','toString','281782ljmxQS','x\x20=\x20',';\x0a\x20\x20let\x20trigFunc\x20=\x20','24nRgDzV','getElementById','\x22\x20style=\x22max-width:100%;max-height:100vh;border-radius:10px;\x22\x20/>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<p\x20style=\x22position:fixed;bottom:10px;color:white;text-align:center;width:100%;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20📌\x20请长按图片保存到相册\x0a\x20\x20\x20\x20\x20\x20\x20\x20</p>\x0a\x20\x20\x20\x20\x20\x20</body></html>\x0a\x20\x20\x20\x20'];_0x16fc=function(){return _0x1a1e84;};return _0x16fc();}function trigFunc(_0x2e73b0,_0x50a119){const _0x3d0a66=useDegrees?_0x2e73b0(_0x50a119*Math['PI']/0xb4):_0x2e73b0(_0x50a119);return round12(_0x3d0a66);}function _0x2a77(_0x2f1255,_0x3c2682){const _0x16fc80=_0x16fc();return _0x2a77=function(_0x2a776b,_0x856cb2){_0x2a776b=_0x2a776b-0x1d1;let _0x4758c4=_0x16fc80[_0x2a776b];return _0x4758c4;},_0x2a77(_0x2f1255,_0x3c2682);}function degTrig(_0x194e6d,_0x243e8a){const _0x564e76=_0x194e6d(_0x243e8a),_0x470281=useDegrees?_0x564e76*0xb4/Math['PI']:_0x564e76;return round12(_0x470281);}function factorial(_0x440e89){const _0xe87464=_0x2a77;if(_0x440e89<0x0||_0x440e89%0x1!==0x0)throw new Error(_0xe87464(0x1e3));if(_0x440e89===0x0||_0x440e89===0x1)return 0x1;let _0x2152a=0x1;for(let _0x3b221f=0x2;_0x3b221f<=_0x440e89;_0x3b221f++)_0x2152a*=_0x3b221f;return _0x2152a;}function invTrigFunc(_0x38eb60,_0xe72486){const _0x20ad6e=useDegrees?_0x38eb60(_0xe72486*Math['PI']/0xb4):_0x38eb60(_0xe72486);return round12(0x1/_0x20ad6e);}function downloadGraph(){const _0x4a9dc9=_0x2a77,_0x14d1ed=document[_0x4a9dc9(0x1dc)](_0x4a9dc9(0x1ee)),_0x62efe=_0x14d1ed['toDataURL'](_0x4a9dc9(0x1ea)),_0x49520d=window[_0x4a9dc9(0x1f3)]('',_0x4a9dc9(0x1e8));_0x49520d['document'][_0x4a9dc9(0x1e7)](_0x4a9dc9(0x1f0)+_0x62efe+_0x4a9dc9(0x1dd));}function round12(_0x2f5801){const _0x1aa54f=_0x2a77;if(!isFinite(_0x2f5801))return _0x2f5801;if(Math[_0x1aa54f(0x1ef)](_0x2f5801)>=0xf4240)return _0x2f5801;const _0x46a8fa=(_0x2f5801*0x9184e72a000)[_0x1aa54f(0x1eb)](0x0),_0x50134e=parseFloat(_0x46a8fa)/0x9184e72a000;return parseFloat(_0x50134e['toFixed'](0xc));}
+
+</script>
+</body>
+</html>
